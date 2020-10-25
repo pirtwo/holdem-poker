@@ -1,8 +1,10 @@
 export default class Player {
-    constructor(table, balance) {
-        this.table = table;
-        this.state = undefined;
+    constructor(name, table, balance) {
+        this.name = name;
         this.hand = [];
+        this.table = table;
+        this.seat = null;
+        this.state = undefined;        
         this.totalBets = 0;
         this.balance = balance;
     }
