@@ -3,9 +3,9 @@ import * as utils from "./lib/utils";
 import Sound from "pixi-sound";
 import Stats from "stats.js";
 import Charm from "./lib/charm";
-import Room from "./holdem";
 import Player from "./player";
 import Holdem from "./holdem";
+import handStrengthCalculator from "./hand-strength";
 
 const app = new PIXI.Application({
     backgroundColor: 0x1099bb,
@@ -49,6 +49,11 @@ function setup(loader, resources) {
         .deal()
         .endBeting()
         .deal();
+
+    holdem.players.forEach(p=>{
+        let handStr = handStrengthCalculator(p.hand);
+        console.log(handStr);
+    })
 
     // game loop
     app.ticker.add((delta) => {

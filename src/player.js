@@ -11,6 +11,8 @@ export default class Player {
 
     bet(amount) {
         this.table.bet(this, amount);
+        this.seat.showBets(this.totalBets);
+        this.seat.showBalance(this.balance);
     }
 
     check() {
@@ -19,14 +21,20 @@ export default class Player {
 
     call() {
         this.table.call(this);
+        this.seat.showBets(this.totalBets);
+        this.seat.showBalance(this.balance);
     }
 
     fold() {
         this.table.fold(this);
+        this.seat.showBets(this.totalBets);
+        this.seat.showBalance(this.balance);
     }
 
     blind(amount) {
         this.totalBets += amount;
         this.balance -= amount;
+        this.seat.showBets(this.totalBets);
+        this.seat.showBalance(this.balance);
     }
 }

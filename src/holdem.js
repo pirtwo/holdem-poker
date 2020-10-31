@@ -1,7 +1,9 @@
 import * as PIXI from "pixi.js";
 import app from ".";
 import Seat from "./seat";
-import createDeck from "./deck";
+import {
+    createDeck
+} from "./deck";
 import {
     shuffle
 } from "./lib/utils";
@@ -32,6 +34,10 @@ export default class Holdem extends PIXI.Container {
             app.screen.width / 2 - this.table.width / 2,
             app.screen.height / 2 - this.table.height / 2);
 
+        this.potTextbox = new PIXI.Text("500K");
+        this.potTextbox.position.set(
+            app.screen.width / 2 - this.potTextbox.width / 2, app.screen.height / 2);
+
         // create seats
         this.seats = [];
         Object.keys(SEATS).forEach(key => {
@@ -42,10 +48,7 @@ export default class Holdem extends PIXI.Container {
             }));
         });
 
-        // create dealer sign        
-        this.dealerSign = new PIXI.Sprite(this.tileset["chipWhite_border.png"]);
-
-        this.addChild(this.table, ...this.seats, ...this.deck);
+        this.addChild(this.table, this.potTextbox, ...this.seats, ...this.deck);
     }
 
     join(player) {
@@ -237,17 +240,26 @@ class PreFlop {
         let tween = window.tweenManager;
 
         this.game.players.forEach((p, idx) => {
+
+            for (let i = 0; i < 2; i++) {
+                let card = this.game.deck.pop();
+                p.hand.push(card);
+            }
+
             tween.wait(idx * 1000).then(() => {
-                for (let i = 0; i < 2; i++) {
-                    let card = this.game.deck.pop();
-                    p.hand.push(card);
+                p.hand.forEach((card, i) => {
                     tween.wait(i * 300).then(() => {
-                        tween.slide(
-                            card,
-                            p.seat.playerCards.position.x + i * 50,
-                            p.seat.playerCards.position.y);
+                        let t = tween.slide(
+                            card, p.seat.position.x, p.seat.position.y);
+                        t.onComplete = () => {
+                            p.seat.playerCards.getChildAt(i).suit = card.suit;
+                            p.seat.playerCards.getChildAt(i).value = card.value;
+                            p.seat.playerCards.getChildAt(i).visible = true;
+                            p.seat.playerCards.getChildAt(i).reveal();
+                            card.visible = false;
+                        }
                     });
-                }
+                })
             });
         });
     }
@@ -273,16 +285,18 @@ class Flop {
         console.log('flop deal')
 
         let tween = window.tweenManager;
-
         this.game.deck.pop(); // burn a card
 
         for (let i = 0; i < 3; i++) {
             let card = this.game.deck.pop();
             this.game.communityCards.push(card);
 
+            card.scale.set(0.5);
             tween.wait(i * 300).then(() => {
-                tween.slide(
-                    card, app.screen.width / 2 + i * 50, app.screen.height / 2);
+                let t = tween.slide(card, CC_POS_X + i * CC_PADDING, CC_POS_Y);
+                t.onComplete = () => {
+                    card.reveal()
+                }
             });
         }
     }
@@ -308,14 +322,16 @@ class Turn {
         console.log('turn deal')
 
         let tween = window.tweenManager;
-
         this.game.deck.pop(); // burn a card
-
         let card = this.game.deck.pop();
         this.game.communityCards.push(card);
+
+        card.scale.set(0.5);
         tween.wait(300).then(() => {
-            tween.slide(
-                card, app.screen.width / 2 + 3 * 50, app.screen.height / 2);
+            let t = tween.slide(card, CC_POS_X + 3 * CC_PADDING, CC_POS_Y);
+            t.onComplete = () => {
+                card.reveal()
+            }
         });
     }
 
@@ -340,14 +356,16 @@ class River {
         console.log('river deal')
 
         let tween = window.tweenManager;
-
         this.game.deck.pop(); // burn a card
-
         let card = this.game.deck.pop();
         this.game.communityCards.push(card);
+
+        card.scale.set(0.5);
         tween.wait(300).then(() => {
-            tween.slide(
-                card, app.screen.width / 2 + 4 * 50, app.screen.height / 2);
+            let t = tween.slide(card, CC_POS_X + 4 * CC_PADDING, CC_POS_Y);
+            t.onComplete = () => {
+                card.reveal();
+            }
         });
     }
 
@@ -376,6 +394,13 @@ class Showdown {
         return "showdown";
     }
 }
+
+
+
+const
+    CC_PADDING = 80,
+    CC_POS_X = 480,
+    CC_POS_Y = 330;
 
 // seats positions
 const
