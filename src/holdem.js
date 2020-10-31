@@ -75,7 +75,7 @@ export default class Holdem extends PIXI.Container {
 
     deal() {
         this.state.deal();
-        return this;
+        return this.state.animateDeal();
     }
 
     bet(player, amount) {
@@ -236,32 +236,39 @@ class PreFlop {
     }
 
     deal() {
-        console.log('preflop deal')
-        let tween = window.tweenManager;
+        console.log('preflop deal');
+        this.game.players.forEach(p => {
+            p.hand.push(
+                this.game.deck.pop(), 
+                this.game.deck.pop());
+        });
+    }
 
-        this.game.players.forEach((p, idx) => {
+    animateDeal() {
+        let tween = window.tweenManager,
+            anims = [];
 
-            for (let i = 0; i < 2; i++) {
-                let card = this.game.deck.pop();
-                p.hand.push(card);
-            }
-
-            tween.wait(idx * 1000).then(() => {
-                p.hand.forEach((card, i) => {
-                    tween.wait(i * 300).then(() => {
+        this.game.players.forEach((player, i) => {
+            player.hand.forEach((card, j) => {
+                let anim = new Promise(resolve => {
+                    tween.wait((i * 1000) + (j * 300)).then(() => {
                         let t = tween.slide(
-                            card, p.seat.position.x, p.seat.position.y);
+                            card, player.seat.position.x, player.seat.position.y);
                         t.onComplete = () => {
-                            p.seat.playerCards.getChildAt(i).suit = card.suit;
-                            p.seat.playerCards.getChildAt(i).value = card.value;
-                            p.seat.playerCards.getChildAt(i).visible = true;
-                            p.seat.playerCards.getChildAt(i).reveal();
+                            player.seat.playerCards.getChildAt(j).suit = card.suit;
+                            player.seat.playerCards.getChildAt(j).value = card.value;
+                            player.seat.playerCards.getChildAt(j).visible = true;
+                            player.seat.playerCards.getChildAt(j).reveal();
                             card.visible = false;
+                            resolve();
                         }
                     });
-                })
+                });
+                anims.push(anim);
             });
         });
+
+        return Promise.all(anims);
     }
 
     endBeting() {
@@ -282,23 +289,36 @@ class Flop {
     }
 
     deal() {
-        console.log('flop deal')
+        console.log('flop deal');
+        this.game.deck.pop();
+        this.game.communityCards.push(
+            this.game.deck.pop(),
+            this.game.deck.pop(),
+            this.game.deck.pop());
+    }
 
-        let tween = window.tweenManager;
-        this.game.deck.pop(); // burn a card
+    animateDeal() {
+        let tween = window.tweenManager,
+            anims = [];
 
         for (let i = 0; i < 3; i++) {
-            let card = this.game.deck.pop();
-            this.game.communityCards.push(card);
-
+            let card = this.game.communityCards[i];
             card.scale.set(0.5);
-            tween.wait(i * 300).then(() => {
-                let t = tween.slide(card, CC_POS_X + i * CC_PADDING, CC_POS_Y);
-                t.onComplete = () => {
-                    card.reveal()
-                }
+
+            let anim = new Promise(resolve => {
+                tween.wait(i * 300).then(() => {
+                    let t = tween.slide(card, CC_POS_X + i * CC_PADDING, CC_POS_Y);
+                    t.onComplete = () => {
+                        card.reveal();
+                        resolve();
+                    }
+                });
             });
+
+            anims.push(anim);
         }
+
+        return Promise.all(anims);
     }
 
     endBeting() {
@@ -319,19 +339,24 @@ class Turn {
     }
 
     deal() {
-        console.log('turn deal')
+        console.log('turn deal');
+        this.game.deck.pop();
+        this.game.communityCards.push(this.game.deck.pop());
+    }
 
-        let tween = window.tweenManager;
-        this.game.deck.pop(); // burn a card
-        let card = this.game.deck.pop();
-        this.game.communityCards.push(card);
+    animateDeal() {
+        let tween = window.tweenManager,
+            card = this.game.communityCards[3];
 
         card.scale.set(0.5);
-        tween.wait(300).then(() => {
-            let t = tween.slide(card, CC_POS_X + 3 * CC_PADDING, CC_POS_Y);
-            t.onComplete = () => {
-                card.reveal()
-            }
+        return new Promise(resolve => {
+            tween.wait(300).then(() => {
+                let t = tween.slide(card, CC_POS_X + 3 * CC_PADDING, CC_POS_Y);
+                t.onComplete = () => {
+                    card.reveal();
+                    resolve();
+                }
+            });
         });
     }
 
@@ -353,19 +378,24 @@ class River {
     }
 
     deal() {
-        console.log('river deal')
+        console.log('river deal');
+        this.game.deck.pop();
+        this.game.communityCards.push(this.game.deck.pop());
+    }
 
-        let tween = window.tweenManager;
-        this.game.deck.pop(); // burn a card
-        let card = this.game.deck.pop();
-        this.game.communityCards.push(card);
+    animateDeal() {
+        let tween = window.tweenManager,
+            card = this.game.communityCards[3];
 
         card.scale.set(0.5);
-        tween.wait(300).then(() => {
-            let t = tween.slide(card, CC_POS_X + 4 * CC_PADDING, CC_POS_Y);
-            t.onComplete = () => {
-                card.reveal();
-            }
+        return new Promise(resolve => {
+            tween.wait(300).then(() => {
+                let t = tween.slide(card, CC_POS_X + 3 * CC_PADDING, CC_POS_Y);
+                t.onComplete = () => {
+                    card.reveal();
+                    resolve();
+                }
+            });
         });
     }
 
